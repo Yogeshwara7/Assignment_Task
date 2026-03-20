@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Yogi's Store</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
+  <style>
+    body { background: #f4f6f9; }
+    .navbar { background: #1a1a2e; }
+    .navbar-brand { color: #e94560 !important; font-weight: 700; font-size: 1.5rem; }
+    .card { border: none; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); transition: transform 0.2s; }
+    .card:hover { transform: translateY(-4px); }
+    .card-img-top { border-radius: 12px 12px 0 0; height: 220px; object-fit: cover; }
+    .badge-category { background: #e94560; font-size: 0.75rem; }
+    .btn-like { border: none; background: none; font-size: 1.2rem; transition: transform 0.15s; }
+    .btn-like:hover { transform: scale(1.2); }
+    .btn-like.liked { color: #e94560; }
+    .btn-like:not(.liked) { color: #aaa; }
+    .price { color: #1a1a2e; font-weight: 700; font-size: 1.1rem; }
+    .filter-btn.active { background: #e94560; border-color: #e94560; color: #fff; }
+    .filter-btn { border-color: #e94560; color: #e94560; }
+    .filter-btn:hover { background: #e94560; color: #fff; }
+    #searchInput { border-radius: 20px; padding-left: 1rem; }
+    .no-results { display: none; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark px-4 py-3">
+  <span class="navbar-brand"><i class="bi bi-bag-heart-fill me-2"></i>Yogi's Store</span>
+  <div class="d-flex" style="width:260px">
+    <input id="searchInput" type="text" class="form-control form-control-sm" placeholder="Search products..."/>
+  </div>
+</nav>
+
+<div class="container py-4">
+  <!-- Filters -->
+  <div class="d-flex gap-2 mb-4 flex-wrap">
+    <button class="btn btn-sm filter-btn active" data-cat="All">All</button>
+    <button class="btn btn-sm filter-btn" data-cat="Shirts">Shirts</button>
+    <button class="btn btn-sm filter-btn" data-cat="Pants">Pants</button>
+  </div>
+
+  <!-- Product Grid -->
+  <div id="productGrid" class="row g-4"></div>
+  <div class="no-results text-center py-5 text-muted" id="noResults">
+    <i class="bi bi-search fs-1"></i>
+    <p class="mt-2">No products found.</p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  const products = [
+    { id: 1, name: "Classic White Shirt", category: "Shirts", price: 799,  image: "https://images.unsplash.com/photo-1598033129183-c4f50c736f10?w=400&q=80" },
+    { id: 2, name: "Slim Fit Blue Shirt", category: "Shirts", price: 999,  image: "https://images.unsplash.com/photo-1607345366928-199ea26cfe3e?w=400&q=80" },
+    { id: 3, name: "Casual Linen Shirt", category: "Shirts", price: 1199, image: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=400&q=80" },
+    { id: 4, name: "Striped Oxford Shirt", category: "Shirts", price: 1499, image: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=400&q=80" },
+    { id: 5, name: "Black Slim Pants",   category: "Pants",  price: 1299, image: "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=400&q=80" },
+    { id: 6, name: "Khaki Chino Pants",  category: "Pants",  price: 1599, image: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=400&q=80" },
+    { id: 7, name: "Denim Jogger Pants", category: "Pants",  price: 1799, image: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&q=80" },
+    { id: 8, name: "Grey Cargo Pants",   category: "Pants",  price: 1999, image: "https://images.unsplash.com/photo-1519058082700-08a0b56da9b4?w=400&q=80" },
+  ];
+
+  // Load likes from localStorage
+  function getLikes() {
+    return JSON.parse(localStorage.getItem("storeLikes") || "{}");
+  }
+  function saveLikes(likes) {
+    localStorage.setItem("storeLikes", JSON.stringify(likes));
+  }
+
+  let activeCategory = "All";
+  let searchQuery = "";
+
+  function getFilteredProducts() {
+    return products.filter(p => {
+      const matchCat = activeCategory === "All" || p.category === activeCategory;
+      const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchCat && matchSearch;
+    });
+  }
+
+  function renderProducts() {
+    const likes = getLikes();
+    const filtered = getFilteredProducts();
+    const grid = document.getElementById("productGrid");
+    const noResults = document.getElementById("noResults");
+
+    grid.innerHTML = "";
+
+    if (filtered.length === 0) {
+      noResults.style.display = "block";
+      return;
+    }
+    noResults.style.display = "none";
+
+    filtered.forEach(p => {
+      const liked = !!likes[p.id];
+      const likeCount = likes[p.id] || 0;
+      const col = document.createElement("div");
+      col.className = "col-12 col-sm-6 col-md-4 col-lg-3";
+      col.innerHTML = `
+        <div class="card h-100">
+          <img src="${p.image}" class="card-img-top" alt="${p.name}" loading="lazy"/>
+          <div class="card-body d-flex flex-column">
+            <span class="badge badge-category mb-2 align-self-start">${p.category}</span>
+            <h6 class="card-title mb-1">${p.name}</h6>
+            <div class="d-flex justify-content-between align-items-center mt-auto pt-2">
+              <span class="price">₹${p.price.toLocaleString("en-IN")}</span>
+              <div class="d-flex align-items-center gap-1">
+                <button class="btn-like ${liked ? "liked" : ""}" data-id="${p.id}" aria-label="Like">
+                  <i class="bi ${liked ? "bi-heart-fill" : "bi-heart"}"></i>
+                </button>
+                <small class="text-muted like-count" data-id="${p.id}">${likeCount}</small>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      grid.appendChild(col);
+    });
+
+    // Like button events
+    grid.querySelectorAll(".btn-like").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = parseInt(btn.dataset.id);
+        const likes = getLikes();
+        if (likes[id]) {
+          delete likes[id];
+        } else {
+          likes[id] = 1;
+        }
+        saveLikes(likes);
+        renderProducts();
+      });
+    });
+  }
+
+  // Category filter
+  document.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      activeCategory = btn.dataset.cat;
+      renderProducts();
+    });
+  });
+
+  // Search
+  document.getElementById("searchInput").addEventListener("input", e => {
+    searchQuery = e.target.value;
+    renderProducts();
+  });
+
+  // Initial render
+  renderProducts();
+</script>
+</body>
+</html>
